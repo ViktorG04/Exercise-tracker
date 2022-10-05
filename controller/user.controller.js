@@ -1,7 +1,5 @@
-
 const User = require('../database/user.model');
 const Exercise = require('../database/excercise.model');
-
 
 const getUsers = async (req, res) => {
     try {
@@ -15,18 +13,7 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
     const { username } = req.body;
-
-    if (!username) {
-        return res.status(401).json({ msg: "value empty" });
-    }
-
     try {
-        const exisUser = await User.findOne({ username });
-
-        if (exisUser) {
-            return res.status(400).json({ msj: `El user ${username} is already registered` });
-        };
-
         const user = new User({ username });
         const data = await user.save();
 
@@ -38,16 +25,19 @@ const createUser = async (req, res) => {
 };
 
 const createExercise = async (req, res) => {
-
+    const { _id, date, ...body } = req.body;
+    const user = req.user;
     try {
 
-        const { _id, date, ...body } = req.body;
+        const currenDate = new Date();
+        const year = currenDate.getFullYear();
+        const month = currenDate.getMonth();
+        const today = currenDate.getDate();
 
-        let fech;
-        if (!date) {
-            fech = new Date().toDateString();
-        } else {
-            fech = new Date(date).toDateString();
+        let fech = `${year}-${month}-${today}`;
+
+        if (date) {
+            fech = date
         };
 
         const data = {
@@ -59,26 +49,48 @@ const createExercise = async (req, res) => {
         const excercise = new Exercise(data);
 
         const result = await excercise.save();
+        const formatDate = new Date(result.date).toDateString();
+        const values = {
+            username: user.username,
+            description: result.description,
+            duration: result.duration,
+            date: formatDate,
+            _id: user._id
+        };
 
-        const { $__, $isNew, _doc } = result;
-        const { user, createdAt, updatedAt, __v, ...values } = _doc;
+        res.status(201).json(values);
 
-        const response = {
-            username: req.user.username,
-            ...values,
-            _id: req.user._id
-        }
-
-        res.status(200).json(response);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'error, with DB server' });
     }
 };
 
+const getLogsExercises = async (req, res) => {
+    const { from, to, limit = 10 } = req.query;
+    const { _id, username } = req.user;
+
+    const [count, log] = await Promise.all([
+        Exercise.countDocuments(),
+        Exercise.find({date : {$gte: from, $lt: to}
+        })
+        .limit(limit)
+        .sort({date: 1})
+    ]);
+
+    const result = {
+        username: username,
+        count: count,
+        _id: _id,
+        log: log
+    };
+
+    res.status(200).json(result);
+};
+
 module.exports = {
     createUser,
     createExercise,
-    getUsers
+    getUsers,
+    getLogsExercises
 };
-
