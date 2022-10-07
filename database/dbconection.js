@@ -2,20 +2,15 @@ const mongoose = require('mongoose');
 
 const server = process.env.DB_SERVER;
 
-const connect  = async() =>{
+const connect = async () => {
 
     try {
-       const client = await mongoose.connect(server);
-       console.log("conectado")
-      return client;
-        
+        const client = await mongoose.connect(server);
+        return client;
     } catch (error) {
-        console.log(error);
-        throw new Error('Error entablar conexcion');
-        
+        console.error(error);
+        throw new Error('connection error');
     }
 };
 
-module.exports = {
-    connect
-};
+module.exports = { connect };
