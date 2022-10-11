@@ -1,6 +1,11 @@
 const User = require('../database/user.model');
 const Exercise = require('../database/excercise.model');
 
+const formatDate = (date) =>{
+    let dateArry = date.split('-')
+    return dateArry = new Date(dateArry).toDateString();
+};
+
 const getUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -34,12 +39,7 @@ const createExercise = async (req, res) => {
         const month = currenDate.getMonth();
         const today = currenDate.getDate();
 
-        let fech = `${year}-${month}-${today}`;
-
-        if (date) {
-            fech = date
-        };
-
+        let fech = (date) ? date : `${year}-${month}-${today}`;
         const data = {
             ...body,
             date: fech,
@@ -49,12 +49,12 @@ const createExercise = async (req, res) => {
         const excercise = new Exercise(data);
 
         const result = await excercise.save();
-        const formatDate = new Date(result.date).toDateString();
+
         const values = {
             username: user.username,
             description: result.description,
             duration: result.duration,
-            date: formatDate,
+            date: formatDate(result.date),
             _id: user._id
         };
 
@@ -67,25 +67,40 @@ const createExercise = async (req, res) => {
 };
 
 const getLogsExercises = async (req, res) => {
-    const { from, to, limit = 10 } = req.query;
+    const { from, to, limit } = req.query;
     const { _id, username } = req.user;
 
-    const [count, log] = await Promise.all([
-        Exercise.countDocuments(),
-        Exercise.find({date : {$gte: from, $lt: to}
-        })
-        .limit(limit)
-        .sort({date: 1})
-    ]);
-
-    const result = {
-        username: username,
-        count: count,
-        _id: _id,
-        log: log
+    let query = { user: _id };
+    if (from && !to) {
+        query.date = { $gte: from }
+    }
+    else if (!from && to) {
+        query.date = { $lte: to }
+    }
+    else if (from && to) {
+        query.date = { $gte: from, $lte: to }
     };
 
-    res.status(200).json(result);
+    let limitCheck = (limit) ? limit : Number.MAX_VALUE;
+
+    const result = await Exercise.find(query)
+        .limit(limitCheck);
+
+    const logArry = result.map((item) => {
+        return {
+            description: item.description,
+            duration: item.duration,
+            date: formatDate(item.date)
+        };
+    });
+
+    const data = {
+        _id,
+        count: result.length,
+        username,
+        log: logArry
+    }
+    res.json(data);
 };
 
 module.exports = {

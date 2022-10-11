@@ -25,11 +25,13 @@ const validateValues = async (req, res, next) => {
     return res.status(401).json({ msg: "fields cannot be empty" });
   }
 
-  const validate = new Date(date);
-  if (validate == "Invalid Date") {
-    return res.status(400).json({ error: `${validate}` });
+  if(date){
+    const validate = new Date(date);
+    if (validate == "Invalid Date") {
+      return res.status(400).json({ error: `${validate} - format YYYY-MM-DD` });
+    }
   }
-
+  
   next();
 };
 
@@ -50,18 +52,18 @@ const validateUserName = async (req, res, next) => {
 
 const validateQueryParams = async (req, res, next) => {
   const { from, to } = req.query;
-
-  const validateFrom = new Date(from);
-  const validateTo = new Date(to);
-
-  if (validateFrom == "Invalid Date") {
-    return res.status(400).json({ error: `FROM is invalidate - format YYYY-MM-DD` });
+  if(from && to){
+    const validateFrom = new Date(from);
+    const validateTo = new Date(to);
+  
+    if (validateFrom == "Invalid Date") {
+      return res.status(400).json({ error: `FROM is invalidate - format YYYY-MM-DD` });
+    }
+  
+    if (validateTo == "Invalid Date") {
+      return res.status(400).json({ error: `TO is invalidate - format YYYY-MM-DD` });
+    }
   }
-
-  if (validateTo == "Invalid Date") {
-    return res.status(400).json({ error: `TO is invalidate - format YYYY-MM-DD` });
-  }
-
   next();
 };
 

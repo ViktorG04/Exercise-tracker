@@ -12,6 +12,6 @@ router.post('/users', validateUserName, createUser);
 
 router.post('/users/:_id?/exercises', validateValues, validateIdUser, createExercise );
 
-router.get('/users/:_id?/logs', validateIdUser, validateQueryParams, getLogsExercises);
+router.get('/users/:_id?/logs', validateIdUser,  validateQueryParams,  getLogsExercises);
 
 module.exports = router;
